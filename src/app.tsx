@@ -9,116 +9,129 @@ interface State {
   scrollProgress: Animated.Value;
 }
 
+interface MagicTab {
+  icon: any;
+  color: string;
+}
+
 class App extends React.Component<Props, State> {
+  magicTabs: MagicTab[];
+
   constructor(props: Props) {
     super(props);
+    this.magicTabs = [
+      {
+        icon: require("../animations/smiley.json"),
+        color: "#6bd69b"
+      },
+      {
+        icon: require("../animations/chart.json"),
+        color: "#7468e1"
+      }
+    ];
 
     this.state = {
       scrollProgress: new Animated.Value(0)
     };
   }
 
-  renderNavBar(): JSX.Element {
+  renderTabBar(): JSX.Element {
     const { scrollProgress } = this.state;
+
+    const icons: JSX.Element[] = this.magicTabs.map(
+      (magicTab: MagicTab, tabIndex: number) => {
+        const animationProgress = scrollProgress.interpolate({
+          inputRange: [
+            windowSize.width * tabIndex - windowSize.width,
+            windowSize.width * tabIndex,
+            windowSize.width * tabIndex + windowSize.width
+          ],
+          outputRange: [0, 1, 0],
+          extrapolate: "clamp"
+        });
+        return (
+          <View key={`tab-${tabIndex}`} style={styles.navBarIcon}>
+            <LottieView
+              style={styles.fill}
+              source={magicTab.icon}
+              progress={animationProgress}
+              speed={1}
+            />
+          </View>
+        );
+      }
+    );
+
+    const scrollIndicators: JSX.Element[] = this.magicTabs.map(
+      (magicTab: MagicTab, tabIndex: number) => {
+        const opacityProgress = scrollProgress.interpolate({
+          inputRange: [
+            windowSize.width * tabIndex - windowSize.width,
+            windowSize.width * tabIndex,
+            windowSize.width * tabIndex + windowSize.width
+          ],
+          outputRange: [0, 1, 0],
+          extrapolate: "clamp"
+        });
+        return (
+          <Animated.View
+            key={`scroll-indicator-${tabIndex}`}
+            style={[
+              styles.navBarIndicator,
+              {
+                backgroundColor: magicTab.color,
+                opacity: opacityProgress,
+                transform: [
+                  {
+                    translateX: scrollProgress.interpolate({
+                      inputRange: [
+                        windowSize.width * tabIndex - windowSize.width,
+                        windowSize.width * tabIndex,
+                        windowSize.width * tabIndex + windowSize.width
+                      ],
+                      outputRange: [-80, 0, 80]
+                    })
+                  }
+                ]
+              }
+            ]}
+          />
+        );
+      }
+    );
+
     return (
       <View style={styles.navBarContainer}>
-        <View style={styles.navBar}>
-          <View style={styles.navBarIcon}>
-            <LottieView
-              style={styles.fill}
-              source={require("../animations/smiley.json")}
-              progress={
-                scrollProgress.interpolate({
-                  inputRange: [
-                    -windowSize.width / 2,
-                    0,
-                    windowSize.width,
-                    windowSize.width * 1.5
-                  ],
-                  outputRange: [1, 0.9, 0.1, 0]
-                  //extrapolate: 'clamp',
-                }) as any
-              }
-              speed={1}
-            />
-          </View>
-          <View style={styles.navBarIcon}>
-            <LottieView
-              style={styles.fill}
-              source={require("../animations/chart.json")}
-              progress={
-                scrollProgress.interpolate({
-                  inputRange: [
-                    -windowSize.width / 2,
-                    0,
-                    windowSize.width,
-                    windowSize.width * 1.5
-                  ],
-                  outputRange: [1, 0.9, 0.1, 0]
-                  //extrapolate: 'clamp',
-                }) as any
-              }
-              speed={1}
-            />
-          </View>
-        </View>
-        <View style={styles.navBarIndicatorContainer}>
-          <Animated.View
-            style={[
-              styles.navBarIndicator,
-              {
-                backgroundColor: "#6bd69b",
-                opacity: scrollProgress.interpolate({
-                  inputRange: [0, windowSize.width],
-                  outputRange: [1, 0]
-                  //extrapolate: 'clamp',
-                }),
-                transform: [
-                  {
-                    translateX: scrollProgress.interpolate({
-                      inputRange: [0, windowSize.width],
-                      outputRange: [0, 80]
-                      //extrapolate: 'clamp',
-                    })
-                  }
-                ]
-              }
-            ]}
-          />
-          <Animated.View
-            style={[
-              styles.navBarIndicator,
-              {
-                backgroundColor: "#7468e1",
-                opacity: scrollProgress.interpolate({
-                  inputRange: [0, windowSize.width],
-                  outputRange: [0, 1]
-                  //extrapolate: 'clamp',
-                }),
-                transform: [
-                  {
-                    translateX: scrollProgress.interpolate({
-                      inputRange: [0, windowSize.width],
-                      outputRange: [0, 80]
-                      //extrapolate: 'clamp',
-                    })
-                  }
-                ]
-              }
-            ]}
-          />
-        </View>
+        <View style={styles.navBar}>{icons}</View>
+        <View style={styles.navBarIndicatorContainer}>{scrollIndicators}</View>
         <View style={styles.navBarSeparator} />
       </View>
     );
   }
 
   renderScrollView(): JSX.Element {
+    const pages: JSX.Element[] = this.magicTabs.map(
+      (magicTab: MagicTab, tabIndex: number) => {
+        return (
+          <View
+            style={[
+              styles.page,
+              {
+                backgroundColor: magicTab.color
+              }
+            ]}
+            key={`scroll-indicator-${tabIndex}`}
+          />
+        );
+      }
+    );
+
     return (
       <Animated.ScrollView
-        style={styles.scrollView}
+        style={styles.fill}
         horizontal={true}
         pagingEnabled={true}
+        bounces={false}
         showsHorizontalScrollIndicator={false}
         scrollEventThrottle={16}
         onScroll={Animated.event(
@@ -136,33 +149,18 @@ class App extends React.Component<Props, State> {
           }
         )}
       >
-        <View
-          style={[
-            styles.page,
-            {
-              backgroundColor: "#6bd69b"
-            }
-          ]}
-        />
-        <View
-          style={[
-            styles.page,
-            {
-              backgroundColor: "#7468e1"
-            }
-          ]}
-        />
+        {pages}
       </Animated.ScrollView>
     );
   }
 
   render() {
-    const navBar = this.renderNavBar();
+    const tabBar = this.renderTabBar();
     const scrollView = this.renderScrollView();
 
     return (
       <View style={styles.container}>
-        {navBar}
+        {tabBar}
         {scrollView}
       </View>
     );
@@ -188,11 +186,10 @@ const styles = StyleSheet.create({
     width: 70
   },
   navBarIndicatorContainer: {
-    height: 4
+    height: 4,
+    flexDirection: "row"
   },
   navBarIndicator: {
-    position: "absolute",
-    left: 0,
     bottom: 2,
     height: 4,
     borderRadius: 2,
@@ -204,9 +201,6 @@ const styles = StyleSheet.create({
   },
   page: {
     width: windowSize.width
-  },
-  scrollView: {
-    flex: 1
   }
 });
 
