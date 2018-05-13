@@ -119,6 +119,7 @@ class App extends React.Component<Props, State> {
         style={styles.scrollView}
         horizontal={true}
         pagingEnabled={true}
+        showsHorizontalScrollIndicator={false}
         scrollEventThrottle={16}
         onScroll={Animated.event(
           [
